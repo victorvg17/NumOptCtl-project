@@ -1,7 +1,9 @@
 import contextlib
 from pathlib import Path
 from arg_parser import parse
-from continuous_cartpole import ContinuousCartPoleEnv
+# from continuous_cartpole import ContinuousCartPoleEnv
+## victor
+from mypendulum import PendulumEnv 
 from ddpg_continuous import DDPG
 from utils import Visualizer
 from utils import reward_carrot_stick, reward_no_fast_rotation, reward_laplacian
@@ -14,9 +16,10 @@ if __name__ == '__main__':
 
     # ========== Parameters ==========
     reward_func = reward_func_map[args.reward_function]
-    env = ContinuousCartPoleEnv(reward_function=reward_func)
+    # env = ContinuousCartPoleEnv(reward_function=reward_func)
+    env = PendulumEnv()
     state_dim = env.observation_space.shape[0]
-    action_dim = 1
+    action_dim = env.action_space.shape[0]
     noise_std = args.action_std
     episodes = args.episode
     timesteps = args.steps
@@ -56,12 +59,12 @@ if __name__ == '__main__':
 
     # --- animation ---
     if render_flag:
-        with contextlib.closing(ContinuousCartPoleEnv()) as env:
-            for _ in range(3):
+        with contextlib.closing(PendulumEnv()) as env:
+            for _ in range(4):
                 s = env.reset()
                 for _ in range(500):
                     env.render()
-                    a = ddpg.get_action(s)
+                    a = ddpg.get_action(s, is_testing=True)
                     s, _, d, _ = env.step(a)
                     if d:
                         break

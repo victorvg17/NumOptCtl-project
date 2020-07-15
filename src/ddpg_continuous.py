@@ -63,14 +63,17 @@ class Actor(nn.Module):
             if isinstance(layer, nn.Linear):
                 torch.nn.init.xavier_normal_(layer.weight, gain=1.0)
 
-    def forward(self, state):
+    def forward(self, state, is_testing=False):
         """
         Note that state can be a batch of states
         """
         state = torch.from_numpy(state).float().to(device) if isinstance(
             state, np.ndarray) else state
-        action_and_noise = self.block(state) + torch.randn(1) * self.noise_std
-        return torch.clamp(action_and_noise, min=-1.0, max=1.0)
+        if is_testing:
+            action_and_noise = self.block(state)
+        else:
+            action_and_noise = self.block(state) + torch.randn(1) * self.noise_std
+        return torch.clamp(action_and_noise, min=-2.0, max=2.0)
 
 
 class Critic(nn.Module):
@@ -113,14 +116,17 @@ class DDPG:
                  critic_lr=0.001,
                  verbose=False):
         self.gamma = gamma
-        self.tau = 0.01
+        # self.tau = 0.01
+        self.tau = 0.001
         self.actor = Actor(state_dim,
                            noise_std=noise_std,
                            hidden_dim=hidden_dim)
         self.actor_target = Actor(state_dim,
                                   noise_std=noise_std,
                                   hidden_dim=hidden_dim)
-        self.critic = Critic(state_dim, action_dim, hidden_dim=hidden_dim)
+        self.critic = Critic(state_dim, 
+                            action_dim, 
+                            hidden_dim=hidden_dim)
         self.critic_target = Critic(state_dim,
                                     action_dim,
                                     hidden_dim=hidden_dim)
@@ -131,7 +137,7 @@ class DDPG:
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(),
                                                  lr=critic_lr)
         self.buffer = ReplayBuffer(max_size=1e5)
-        self.logging_period = 10 if verbose else 1000
+        self.logging_period = 10 if verbose else 100
         # --- ModelIO ---
         self.modelio = ModelIO(model_path=Path(__file__).resolve().parent /
                                'models')
@@ -142,11 +148,11 @@ class DDPG:
             target_param.data.copy_(param.data * self.tau + target_param.data *
                                     (1.0 - self.tau))
 
-    def get_action(self, state):
+    def get_action(self, state, is_testing=False):
         """
         used for test time (not training)
         """
-        action = self.actor(state).detach()
+        action = self.actor(state, is_testing).detach()
         env_action = torch.clamp(action, min=-1.0, max=1.0).detach().numpy()
         return env_action
 
@@ -195,6 +201,13 @@ class DDPG:
                        f"Episode {i_episode}/{episodes}. "
                        f"Reward {stats.episode_rewards[i_episode-1]}"))
 
+            # snapshot instants
+            snaps_moments = np.array([400, 800, 1200, 1600])
+            for snap in snaps_moments:
+                if (i_episode == snap):
+                    self.save_models(model_name=snap)
+
+
         return stats
 
     def train_batch(self, batch):
@@ -213,6 +226,8 @@ class DDPG:
 
         actor_loss = -self.critic(batch_states,
                                   self.actor(batch_states).view(-1, 1)).mean()
+        # actor_loss = self.critic(batch_states,
+        #                           self.actor(batch_states).view(-1, 1)).mean()
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
