@@ -19,8 +19,11 @@ if __name__ == '__main__':
     pend_dyn = PendulumDynamics()
 
     x_next = pend_dyn.simulate_next_state(x, u);
+    print(f'type x_next: {type(x_next)}')
     # integrator
-    F = Function('F', [x, u], x_next);
+    F = Function('F', [x, u], x_next, \
+                ['x', 'u'], ['x_next']);
+    print(f'F: {F}')
 
     # NLP formulation
     # collect all decision variables in w
@@ -37,7 +40,7 @@ if __name__ == '__main__':
         U_name = 'U_' + str(i)
         U_k = MX.sym(U_name, nu, 1);
         ubw.append(2)
-        L = L + X_k[0]**2 + 0.1*pend_dyn.angle_normalize(X_k[1])**2;
+        L = L + X_k[0]**2.0 + 0.1*(X_k[1])**2;
         L = L + 0.01 * U_k**2;
 
         X_next = F(X_k, U_k);
@@ -49,4 +52,12 @@ if __name__ == '__main__':
         w.append(U_k)
         w.append(X_k)
         g.append(X_next - X_k)
-    end
+    L = L + 10*(X_k[0]**2.0 + X_k[1]**2.0);
+
+    # create nlp solver
+    # nlp = struct('x', vertcat(w{:}), 'f', L, 'g', g);
+    nlp = {"x": w, "f": L, "g": g}
+    solver = nlpsol('solver','ipopt', nlp);
+
+    # solve nlp
+    sol = solver('x0', w0, 'lbx', -ubw, 'ubx', ubw, 'lbg', 0, 'ubg', 0);

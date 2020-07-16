@@ -1,4 +1,5 @@
 import numpy as np
+from casadi import *
 
 # build integrator dynamics
 class PendulumDynamics:
@@ -22,16 +23,20 @@ class PendulumDynamics:
         return thdot
 
     def simulate_next_state(self, x, u):
-        # load the arguements to thdot and th st eqn stays clean
-        th = x[0]
-        thdot = x[1]
+        # newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * self.dt
+        newthdot = x[1]
+        newthdot += (self.t1 * np.sin(x[0] + np.pi) + self.t2*u) * self.dt
 
-        newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * self.dt + np.random.normal(loc=0.0, scale=0.01, size=None)
-        newth = th + newthdot*self.dt
+        newth = x[0] + newthdot*self.dt
         # newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111
-        # newthdot = self.clip(newthdot)
-        next_state = [newth, newthdot]
-        return next_state
+        X_new = MX.sym('X_new', 2, 1)
+        X_new[0] = newth
+        X_new[1] = newthdot
+
+        return X_new
 
     def angle_normalize(self, theta):
-        return (((theta+np.pi) % (2*np.pi)) - np.pi)
+        theta = theta + np.pi
+        theta = theta % (2*np.pi)
+        theta = theta - np.pi
+        return theta
