@@ -29,6 +29,9 @@ class PendulumDynamics:
         newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * self.dt + np.random.normal(loc=0.0, scale=0.01, size=None)
         newth = th + newthdot*self.dt
         # newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111
-        newthdot = self.clip(newthdot)
+        # newthdot = self.clip(newthdot)
         next_state = [newth, newthdot]
         return next_state
+
+    def angle_normalize(self, theta):
+        return (((theta+np.pi) % (2*np.pi)) - np.pi)
