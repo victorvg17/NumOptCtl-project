@@ -42,15 +42,13 @@ X_k = x0bar;
 
 for i = 1:N
     U_k = MX.sym(['U_',num2str(i)],   nu, 1);
-    ubw = [ubw; 1];
-%     L = L + sum(X_k.^2);
+    ubw = [ubw; 2];
     L = L + X_k(1)^2 + 0.1*X_k(2)^2;
     L = L + 0.01 * sum(U_k.^2);
 
     X_next = F(X_k, U_k);
     
     X_k = MX.sym(['X_',num2str(i+1)], nx, 1);
-%     ubw = [ubw; inf; inf];
     ubw = [ubw; inf; 8];
     w = {w{:}, U_k};
     w = {w{:}, X_k};
@@ -58,21 +56,6 @@ for i = 1:N
 end
 
 L = L + 10 * sum(X_k.^2);
-
-z = {};
-Lagr = L;
-for i = 1:N
-    lam_k = MX.sym(['lam_',num2str(i)], nx, 1);  % lagrangian multipliers
-    Lagr = Lagr + lam_k' * g(2*i-1:2*i);         % Lagrangian contrib
-    z = {z{:}, w{2*i-1}};
-    z = {z{:}, lam_k};
-    z = {z{:}, w{2*i}};
-end
-z = vertcat(z{:});
-hessL = Function('hessL', {z}, {hessian(Lagr, z)});
-
-figure(1)
-spy(full(hessL(0.1)));
 
 % create nlp solver
 nlp = struct('x', vertcat(w{:}), 'f', L, 'g', g);
