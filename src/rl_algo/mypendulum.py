@@ -45,7 +45,10 @@ class PendulumEnv(gym.Env):
         costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
 
         #RANDOM GAUSSIAN NOISE ADDED HERE
-        newthdot = thdot + (-3*g/(2*l) * np.sin(th + np.pi) + 3./(m*l**2)*u) * dt + np.random.normal(loc=0.0, scale=0.01, size=None)
+        t1 = -3*g/(2*l)
+        t2 = 3./(m*l**2)
+        # newthdot = thdot + (-3*g/(2*l) * np.sin(th + np.pi) + 3./(m*l**2)*u) * dt + np.random.normal(loc=0.0, scale=0.01, size=None)
+        newthdot = thdot + (t1 * np.sin(th + np.pi) + t2*u) * dt + np.random.normal(loc=0.0, scale=0.01, size=None)
         newth = th + newthdot*dt
         newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111
 
@@ -76,8 +79,8 @@ class PendulumEnv(gym.Env):
             axle = rendering.make_circle(.05)
             axle.set_color(0,0,0)
             self.viewer.add_geom(axle)
-            
-            # YOU MUST GIVE THE PATH OF THE IMAGE FILE TO THE ARROW IN THE OPEN AI GYM INSTALATION 
+
+            # YOU MUST GIVE THE PATH OF THE IMAGE FILE TO THE ARROW IN THE OPEN AI GYM INSTALATION
             # fname='/home/paulo/.conda/envs/PythonControl/lib/python3.6/site-packages/gym/envs/classic_control/assets/clockwise.png'
             fname='./clockwise.png'
             # fname = path.join(path.dirname(__file__), "assets/clockwise.png")
