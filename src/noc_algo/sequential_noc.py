@@ -1,11 +1,7 @@
 import numpy as np
 from casadi import *
 import math
-
-# build integrator dynamics
-def dynamics(x, u):
-    return [x(2),
-            sin(x(1)) + u]
+from pendulum_dynamics import PendulumDynamics
 
 
 if __name__ == '__main__':
@@ -21,7 +17,8 @@ if __name__ == '__main__':
     x = MX.sym('x',nx,1);
     u = MX.sym('u',nu,1);
 
-    x_next = x;
-    for i = 1:N_rk4
-        x_next = rk4step(x_next, u, dynamics, h);
-    end
+    pend_dyn = PendulumDynamics()
+
+    x_next = pend_dyn.simulate_next_state(x, u);
+    # integrator
+    F = Function('F', [x, u], [x_next]);
