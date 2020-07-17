@@ -24,19 +24,12 @@ class PendulumDynamics:
 
     def simulate_next_state(self, x, u):
         # newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * self.dt
-        newthdot = x[1]
-        newthdot += (self.t1 * np.sin(x[0] + np.pi) + self.t2*u) * self.dt
+        newthdot = x[1] + (self.t1 * np.sin(x[0] + np.pi) + self.t2*u) * self.dt
 
         newth = x[0] + newthdot*self.dt
         # newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111
-        X_new = MX.sym('X_new', 2, 1)
-        X_new[0] = newth
-        X_new[1] = newthdot
+        # X_new = MX.sym('X_new', 2, 1)
+        # X_new[0] = newth
+        # X_new[1] = newthdot
 
-        return X_new
-
-    def angle_normalize(self, theta):
-        theta = theta + np.pi
-        theta = theta % (2*np.pi)
-        theta = theta - np.pi
-        return theta
+        return vertcat(newth, newthdot)

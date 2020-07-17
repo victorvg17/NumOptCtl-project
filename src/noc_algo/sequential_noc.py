@@ -3,15 +3,19 @@ from casadi import *
 import math
 from pendulum_dynamics import PendulumDynamics
 
+def angle_normalize(theta):
+    theta = theta + np.pi
+    theta = theta % (2*np.pi)
+    theta = theta - np.pi
+    return theta
+
 if __name__ == '__main__':
     #parameters
     nx = 2;         # state dimension
     nu = 1;         # control dimension
     N = 50;         # horizon length
-    DT = .1;        # discretization time step
-    N_rk4 = 10;     # number of rk4 steps per discretiazion time step
     x0bar = [np.pi, 0];   # initial state
-    h = DT / N_rk4; # integration step
+
 
     x = MX.sym('x',nx,1);
     u = MX.sym('u',nu,1);
@@ -40,7 +44,8 @@ if __name__ == '__main__':
         U_name = 'U_' + str(i)
         U_k = MX.sym(U_name, nu, 1);
         ubw.append(2)
-        L = L + X_k[0]**2.0 + 0.1*(X_k[1])**2;
+        # L = L + X_k[0]**2.0 + 0.1*(X_k[1])**2;
+        L = L + angle_normalize(X_k[0])**2.0 + 0.1*(X_k[1])**2;
         L = L + 0.01 * U_k**2;
 
         X_next = F(X_k, U_k);
@@ -53,11 +58,12 @@ if __name__ == '__main__':
         w.append(X_k)
         g.append(X_next - X_k)
     L = L + 10*(X_k[0]**2.0 + X_k[1]**2.0);
-
+    # print the dimensions
+    print(f'w shape: {np.shape(w)}, g shape: {np.shape(g)}, ubw shape: {np.shape(ubw)}')
     # create nlp solver
     # nlp = struct('x', vertcat(w{:}), 'f', L, 'g', g);
     nlp = {"x": w, "f": L, "g": g}
-    solver = nlpsol('solver','ipopt', nlp);
+    # solver = nlpsol('solver','ipopt', nlp);
 
     # solve nlp
-    sol = solver('x0', w0, 'lbx', -ubw, 'ubx', ubw, 'lbg', 0, 'ubg', 0);
+    # sol = solver('x0', w0, 'lbx', -ubw, 'ubx', ubw, 'lbg', 0, 'ubg', 0);
