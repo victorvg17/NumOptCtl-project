@@ -57,9 +57,17 @@ if __name__ == '__main__':
     # print the dimensions
     print(f'w shape: {np.shape(w)}, g shape: {np.shape(g)}, ubw shape: {np.shape(ubw)}')
     # create nlp solver
-    # nlp = struct('x', vertcat(w{:}), 'f', L, 'g', g);
-    nlp = {"x": w, "f": L, "g": g}
-    # solver = nlpsol('solver','ipopt', nlp);
+    nlp = {"x": w,
+           "f": L,
+           "g": g}
+    solver = nlpsol('solver','ipopt', nlp);
 
-    # solve nlp
-    # sol = solver('x0', w0, 'lbx', -ubw, 'ubx', ubw, 'lbg', 0, 'ubg', 0);
+    arg = {}
+    arg["x0"] = w0
+    arg["lbx"] = -ubw
+    arg["ubx"] = ubw
+    arg["lbg"] = 0
+    arg["ubg"] = 0
+
+    # Solve the problem
+    res = solver(**arg)
