@@ -1,7 +1,26 @@
 import numpy as np
 from casadi import *
 import math
+import matplotlib.pyplot as plt
 from pendulum_dynamics import PendulumDynamics
+
+def extractSolFromNlpSolver(res):
+    w_opt = res["x"]
+    w_opt_np = np.array(w_opt)
+    w_opt_np.shape
+    u_opt = []
+    th_opt = []
+    thdot_opt = []
+    for i in range(0, 150, 3):
+        u_opt.append(w_opt_np[i])
+        th_opt.append(w_opt_np[i+1])
+        thdot_opt.append(w_opt_np[i+2])
+    u_opt = np.array(u_opt)
+    th_opt = np.array(th_opt)
+    thdot_opt = np.array(thdot_opt)
+    print(f'u_opt shape: {u_opt.shape}')
+    print(f'th_opt shape: {th_opt.shape}')
+    print(f'thdot_opt shape: {thdot_opt.shape}')
 
 if __name__ == '__main__':
     #parameters
@@ -46,12 +65,9 @@ if __name__ == '__main__':
 
         X_name = 'X_' + str(i+1)
         X_k = MX.sym(X_name, nx, 1);
-        ubw = vertcat(ubw, max_torque, inf, max_speed)
 
-        # w.append(U_k)
-        # w.append(X_k)
+        ubw = vertcat(ubw, max_torque, inf, max_speed)
         w = vertcat(w, U_k, X_k)
-        # g.append(X_next - X_k)
         g = vertcat(g, X_next - X_k)
     L = L + 10*(X_k[0]**2.0 + X_k[1]**2.0);
     # print the dimensions
@@ -71,3 +87,10 @@ if __name__ == '__main__':
 
     # Solve the problem
     res = solver(**arg)
+
+    # visualise solution
+    u_opt, th_opt, thdot_opt = extractSolFromNlpSolver(res)
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    ax1.plot(th_opt)
+    ax1.plot(thdot_opt)
+    ax2.plot(u_opt)
