@@ -24,7 +24,7 @@ class PendulumDynamics:
 
     def simulate_next_state(self, x, u):
         # newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * self.dt
-        newthdot = x[1] + (self.t1 * np.sin(x[0] + np.pi) + self.t2*u) * self.dt
+        newthdot = x[1] + (self.t1 * sin(x[0] + np.pi) + self.t2*u) * self.dt
 
         newth = x[0] + newthdot*self.dt
         # newthdot = np.clip(newthdot, -self.max_speed, self.max_speed) #pylint: disable=E1111

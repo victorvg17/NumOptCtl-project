@@ -42,9 +42,8 @@ if __name__ == '__main__':
     x_next = pend_dyn.simulate_next_state(x, u) 
     print('type x_next:', type(x_next))
     # integrator
-    df = {}
     F = Function('F', [x, u], [x_next], \
-                ['x', 'u'], ['x_next'], df) 
+                ['x', 'u'], ['x_next']) 
     print('F:', F)
 
     # NLP formulation
@@ -61,8 +60,7 @@ if __name__ == '__main__':
     for i in range(N):
         U_name = 'U_' + str(i)
         U_k = MX.sym(U_name, nu, 1) 
-        L = L + X_k[0]**2.0 + 0.1*(X_k[1])**2 
-        L = L + 0.01 * U_k**2 
+        L += X_k[0]**2.0 + 0.1*(X_k[1])**2 + 0.01 * U_k**2 
 
         X_next = F(X_k, U_k) 
 
@@ -72,7 +70,7 @@ if __name__ == '__main__':
         ubw = vertcat(ubw, max_torque, inf, max_speed)
         w = vertcat(w, U_k, X_k)
         g = vertcat(g, X_next - X_k)
-    L = L + 10*(X_k[0]**2.0 + X_k[1]**2.0) 
+    L += 10*(X_k[0]**2.0 + X_k[1]**2.0) 
     # print the dimensions
     print("w shape:" ,np.shape(w), 'g shape:' ,np.shape(g), 'ubw shape:', np.shape(ubw))
     # create nlp solver
