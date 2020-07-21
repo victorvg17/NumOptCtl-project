@@ -6,8 +6,8 @@ class PendulumDynamics:
     def __init__(self):
         self.max_speed=8
         self.max_torque=2.
-        self.dt=.05
-        self.g = 10.
+        self.dt=.1
+        self.g = 9.8
         self.m = 1.
         self.l = 1.
 
