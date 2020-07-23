@@ -45,8 +45,8 @@ class PendulumEnv(gym.Env):
         costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
 
         #RANDOM GAUSSIAN NOISE ADDED HERE
-        t1 = -3*g/(2*l)
-        t2 = 3./(m*l**2)
+        t1 = -3.0*g/(2*l)
+        t2 = 3.0/(m*l**2)
         # newthdot = thdot + (-3*g/(2*l) * np.sin(th + np.pi) + 3./(m*l**2)*u) * dt + np.random.normal(loc=0.0, scale=0.01, size=None)
         newthdot = thdot + (t1 * np.sin(th + np.pi) + t2*u) * dt + np.random.normal(loc=0.0, scale=0.01, size=None)
         newth = th + newthdot*dt

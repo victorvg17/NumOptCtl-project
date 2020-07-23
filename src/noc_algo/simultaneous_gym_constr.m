@@ -29,9 +29,18 @@ DT = .1;        % discretization time step
 N_rk4 = 10;     % number of rk4 steps per discretiazion time step
 x0bar = [pi; 0];   % initial state
 
+%% variables for the gym pendulum dynamics
+g = 9.8
+m = 1.0
+l = 1.0
+
+t1 = -3.0*self.g/(2*self.l)
+t2 = 3.0/(self.m*self.l**2)
+
 % build integrator
 % dynamics
-dynamics = @(x,u) [x(2); sin(x(1)) + u];
+% dynamics = @(x,u) [x(2); sin(x(1)) + u];
+dynamics = @(x,u) [x(2); t1*sin(x(1) + pi) + t2*u];
 h = DT / N_rk4;             % integration step
 x = MX.sym('x',nx,1);
 u = MX.sym('u',nu,1);
