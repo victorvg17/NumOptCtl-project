@@ -6,7 +6,7 @@ class PendulumDynamics:
     def __init__(self, DT = 0.1, N_rk4 = 10):
         self.max_speed = 8
         self.max_torque = 2.0
-        self.DT = DT
+        self.dt = DT
         self.g = 9.8
         self.m = 1.0
         self.l = 1.0
@@ -50,12 +50,12 @@ class PendulumDynamics:
         if (self.kinematics_integrator == 'implicit-euler'):
             theta = x[0]
             omega = x[1]
-            new_omega = omega + (self.t1 * np.sin(theta + np.pi) + self.t2*u) * self.DT
-            new_theta = theta + new_omega*self.DT
+            new_omega = omega + (self.t1 * np.sin(theta + np.pi) + self.t2*u) * self.dt
+            new_theta = theta + new_omega*self.dt
             return vertcat(new_theta, new_omega)
 
         else: #rk4 integrator
-            h = self.DT/self.N_rk4
+            h = self.dt/self.N_rk4
             for i in range(self.N_rk4):
                 x = self.rk4step(x, u, h)
 
