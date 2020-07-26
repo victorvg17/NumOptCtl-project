@@ -64,6 +64,8 @@ class PendulumEnv(gym.Env):
         k4 = self.dynamics(x+h*k3, u)
         x_next = x + h/6*(k1 + 2*k2 + 2*k3 + k4)
         a_max = np.array([np.pi, self.max_speed])
+
+        x_next[1] += np.random.normal(loc=0.0, scale=0.01, size=None)
         x_next = np.clip(x_next, a_min = -a_max, a_max = a_max)
         return x_next
 
@@ -77,8 +79,8 @@ class PendulumEnv(gym.Env):
 
         u = np.clip(u, -self.max_torque, self.max_torque)[0]
         self.last_u = u # for rendering
-        # costs = angle_normalize(th)**2 + .1*thdot**2 + .001*(u**2)
-        costs = th**2 + 0.1*thdot**2 + 0.001*(u**2)
+        costs = angle_normalize(th)**2 + 0.1*thdot**2 + 0.001*(u**2)
+        # costs = th**2 + 0.1*thdot**2 + 0.001*(u**2)
 
         #RANDOM GAUSSIAN NOISE ADDED HERE
         # t1 = -3.0*g/(2*l)
