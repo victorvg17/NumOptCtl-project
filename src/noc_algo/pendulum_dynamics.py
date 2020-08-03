@@ -28,7 +28,7 @@ class PendulumDynamics:
     def dynamics(self, x, u):
         theta = x[0]
         omega = x[1]
-        return vertcat(omega, self.t1 * np.sin(theta + np.pi) + self.t2*u)
+        return vertcat(omega, self.t1 * sin(theta) + self.t2*u)
 
     def rk4step(self, x, u, h):
         # % one rk4 step
@@ -50,7 +50,7 @@ class PendulumDynamics:
         if (self.kinematics_integrator == 'implicit-euler'):
             theta = x[0]
             omega = x[1]
-            new_omega = omega + (self.t1 * np.sin(theta + np.pi) + self.t2*u) * self.dt
+            new_omega = omega + (self.t1 * sin(theta) + self.t2*u) * self.dt
             new_theta = theta + new_omega*self.dt
             return vertcat(new_theta, new_omega)
 
