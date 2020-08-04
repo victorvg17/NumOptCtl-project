@@ -3,15 +3,18 @@ from casadi import *
 import math
 import matplotlib.pyplot as plt
 from pendulum_dynamics import PendulumDynamics
+from pendulum import PendulumEnv
+import time
+
 
 def extractSolFromNlpSolver(res):
     w_opt = res["x"]
     w_opt_np = np.array(w_opt)
-    w_opt_np.shape
+    # print(w_opt_np.shape)
     u_opt = []
     th_opt = []
     thdot_opt = []
-    for i in range(0, 150, 3):
+    for i in range(0, w_opt_np.shape[0], 3):
         u_opt.append(w_opt_np[i])
         th_opt.append(w_opt_np[i+1])
         thdot_opt.append(w_opt_np[i+2])
@@ -30,7 +33,7 @@ if __name__ == '__main__':
     #parameters
     nx = 2          # state dimension
     nu = 1          # control dimension
-    N = 50         # horizon length
+    N = 100         # horizon length
     x0bar = [np.pi, 0]    # initial state
     max_speed = pend_dyn.max_speed
     max_torque = pend_dyn.max_torque
@@ -91,8 +94,20 @@ if __name__ == '__main__':
 
     # visualise solution
     u_opt, th_opt, thdot_opt = extractSolFromNlpSolver(res)
+
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     ax1.plot(th_opt)
     ax1.plot(thdot_opt)
     ax2.plot(u_opt)
     plt.show()
+
+    env = PendulumEnv()
+    #state = []
+    s = env.reset()
+    for i in range(N):
+        env.render()
+        s, _, d, _ = env.step(u_opt[i])
+        #state.append(s)
+        time.sleep(0.1)
+    #plt.plot(state)
+
