@@ -3,7 +3,7 @@ from casadi import *
 
 # build integrator dynamics
 class PendulumDynamics:
-    def __init__(self, DT = 0.1, N_rk4 = 10):
+    def __init__(self, DT = 0.1, N_rk4 = 10, integrator = 'rk4'):
         self.max_speed = 8
         self.max_torque = 2.0
         self.dt = DT
@@ -14,7 +14,7 @@ class PendulumDynamics:
         self.t1 = -3.0*self.g/(2*self.l)
         self.t2 = 3.0/(self.m*self.l**2)
         # types of integrator: implicit-euler and rk4
-        self.kinematics_integrator = 'rk4'
+        self.kinematics_integrator = integrator
         self.N_rk4 = N_rk4
 
     def clip(self, thdot):

@@ -8,8 +8,11 @@ import time
 
 
 def extractSolFromNlpSolver(res):
-    w_opt = res["x"]
-    w_opt_np = np.array(w_opt)
+    # w_opt = res["x"]
+    # w_opt_np = np.array(w_opt)
+
+    w_opt_np = np.array(res["x"])
+
     # print(w_opt_np.shape)
     u_opt = []
     th_opt = []
@@ -24,24 +27,37 @@ def extractSolFromNlpSolver(res):
     print('u_opt shape:', {u_opt.shape})
     print('th_opt shape:', {th_opt.shape})
     print('thdot_opt shape:', {thdot_opt.shape})
-    return u_opt, th_opt, thdot_opt
+
+    cost = np.array(res["f"])
+    g = np.array(res["g"])
+    print('cost: ', -cost[0][0])
+    print('g shape:', {g.shape})
+    g_1 = []
+    g_2 = []
+    for i in range(0, g.shape[0], 2):
+        g_1.append(g[i])
+        g_2.append(g[i+1])
+
+    return u_opt, th_opt, thdot_opt, g_1, g_2
 
 if __name__ == '__main__':
 
-    pend_dyn = PendulumDynamics()
+    
 
     #parameters
     nx = 2          # state dimension
     nu = 1          # control dimension
-    N = 100         # horizon length
+    N = 50         # horizon length
+    N_rk4 = 10      # RK4 steps
+    dt = 0.1        #delta time s
     x0bar = [np.pi, 0]    # initial state
-    max_speed = pend_dyn.max_speed
-    max_torque = pend_dyn.max_torque
-
+    
     x = MX.sym('x',nx,1) 
     u = MX.sym('u',nu,1) 
 
-
+    pend_dyn = PendulumDynamics(N_rk4 = N_rk4, DT = dt)
+    max_speed = pend_dyn.max_speed
+    max_torque = pend_dyn.max_torque
     x_next = pend_dyn.simulate_next_state(x, u) 
     print('type x_next:', type(x_next))
     # integrator
@@ -62,8 +78,8 @@ if __name__ == '__main__':
 
     for i in range(N):
         U_name = 'U_' + str(i)
-        U_k = MX.sym(U_name, nu, 1) 
-        L += X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2 
+        U_k = MX.sym(U_name, nu, 1)
+        L +=  X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2 
 
         X_next = F(X_k, U_k) 
 
@@ -73,7 +89,7 @@ if __name__ == '__main__':
         ubw = vertcat(ubw, max_torque, inf, max_speed)
         w = vertcat(w, U_k, X_k)
         g = vertcat(g, X_next - X_k)
-    L += 10*(X_k[0]**2.0 + X_k[1]**2.0) 
+    #L += 10*(X_k[0]**2.0 + X_k[1]**2.0)  #terminal cost
     # print the dimensions
     print("w shape:" ,np.shape(w), 'g shape:' ,np.shape(g), 'ubw shape:', np.shape(ubw))
     # create nlp solver
@@ -93,21 +109,33 @@ if __name__ == '__main__':
     res = solver(**arg)
 
     # visualise solution
-    u_opt, th_opt, thdot_opt = extractSolFromNlpSolver(res)
+    u_opt, th_opt, thdot_opt, g_1 , g_2 = extractSolFromNlpSolver(res)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     ax1.plot(th_opt)
     ax1.plot(thdot_opt)
     ax2.plot(u_opt)
-    plt.show()
 
-    env = PendulumEnv()
+    fig2 , (ax3, ax4) = plt.subplots(2,1)
+    ax3.plot(g_1)
+    ax4.plot(g_2)
+
+    #env = PendulumEnv(N_rk4 = N_rk4, DT = dt)
     #state = []
-    s = env.reset()
-    for i in range(N):
-        env.render()
-        s, _, d, _ = env.step(u_opt[i])
-        #state.append(s)
-        time.sleep(0.1)
+    cost = 0
+    list_cost = []
+    with contextlib.closing(PendulumEnv(N_rk4 = N_rk4, DT = dt)) as env:
+        s = env.reset()
+        for i in range(N):
+            env.render()
+            s, c, d, _ = env.step(u_opt[i])
+            #state.append(s)
+            cost += c
+            list_cost.append(c)
+            time.sleep(dt)
+    print("cost_rl: ", cost)
+    fig3, ax5 = plt.subplots()
+    ax5.plot(list_cost)
+    plt.show()
     #plt.plot(state)
 

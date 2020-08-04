@@ -77,8 +77,8 @@ class PendulumEnv(gym.Env):
 
         u = np.clip(u, -self.max_torque, self.max_torque)[0]
         self.last_u = u # for rendering
-        costs = angle_normalize(th)**2 + 0.1*thdot**2 + 0.001*(u**2)
-        # costs = th**2 + 0.1*thdot**2 + 0.001*(u**2)
+        #costs = angle_normalize(th)**2 + 0.1*thdot**2 + 0.001*(u**2)
+        costs = th**2 + 0.1*thdot**2 + 0.001*(u**2)
         if (self.kinematics_integrator == 'implicit-euler'):
             newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * dt \
                             + np.random.normal(loc=0.0, scale=0.01, size=None)
