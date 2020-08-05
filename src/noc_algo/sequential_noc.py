@@ -77,11 +77,13 @@ if __name__ == '__main__':
     w0 = 0.1
     L = 0
     X_k = x0bar
+    gamma = 0.99
 
     for i in range(N):
         U_name = 'U_' + str(i)
         U_k = MX.sym(U_name, nu, 1)
-        L +=  X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2
+        # L +=  X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2
+        L = X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2 + gamma*L
 
         X_next = F(X_k, U_k)
 
