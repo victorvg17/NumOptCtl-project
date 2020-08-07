@@ -8,11 +8,12 @@ import time
 import importlib.util
 import os
 
+
 utils_path = os.path.abspath(__file__).replace(os.path.abspath(__file__).split("/")[-2] + '/' +os.path.abspath(__file__).split("/")[-1],'')
 spec = importlib.util.spec_from_file_location("utils_common", utils_path + "utils_common.py")
 plot_utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(plot_utils)
-vis = plot_utils.Plotter(utils_path + 'results/')
+vis = plot_utils.Plotter(utils_path + 'results/', True)
 
 def extractSolFromNlpSolver(res):
     w_opt_np = np.array(res["x"])
@@ -42,15 +43,6 @@ def extractSolFromNlpSolver(res):
         g_2.append(g[i+1])
 
     return u_opt, th_opt, thdot_opt, g_1, g_2
-
-def calculateCostFromOptimTrajectory(u_opt, th_opt, thdot_opt):
-    costs = []
-    for u, th, thdot in zip(u_opt, th_opt, thdot_opt):
-        curr_cost = th**2 + 0.1*thdot**2 + 0.001*u**2
-        costs.append(curr_cost)
-    costs = np.array(costs)
-    print(f'costs shape: {costs.shape}')
-    return costs
 
 if __name__ == '__main__':
     #parameters
@@ -106,6 +98,7 @@ if __name__ == '__main__':
         w = vertcat(w, U_k, X_k)
         g = vertcat(g, X_next - X_k)
     #L += 10*(X_k[0]**2.0 + X_k[1]**2.0)  #terminal cost
+
     # print the dimensions
     print("w shape:" ,np.shape(w), 'g shape:' ,np.shape(g), 'ubw shape:', np.shape(ubw))
     # create nlp solver
@@ -127,31 +120,19 @@ if __name__ == '__main__':
     # visualise solution
     u_opt, th_opt, thdot_opt, g_1 , g_2 = extractSolFromNlpSolver(res)
 
-  
+    vis.plot_state_trajectory(th_opt, thdot_opt)
+    vis.plot_control_trajectory(u_opt)
+    vis.plot_dynamics(g_1, g_2)
 
-    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    # ax1.plot(th_opt)
-    # ax1.plot(thdot_opt)
-    # ax2.plot(u_opt)
-
-    vis.plot_state_trajectory(th_opt, thdot_opt, True)
-    vis.plot_control_trajectory(u_opt, True)
-    vis.plot_dynamics(g_1, g_2, True)
-
-    #env = PendulumEnv(N_rk4 = N_rk4, DT = dt)
-    #state = []
-    cost = 0
-    list_cost = []
+    agg_cost = 0
+    costs = []
     with contextlib.closing(PendulumEnv(N_rk4 = N_rk4, DT = dt)) as env:
         s = env.reset(x0bar)
         for i in range(N):
             env.render()
             s, c, d, _ = env.step(u_opt[i])
-            #state.append(s)
-            # cost += c*gamma
-            cost = c + gamma*cost
-            list_cost.append(c)
+            agg_cost = c + gamma*agg_cost
+            costs.append(c)
             time.sleep(dt)
-    print("cost_rl: ", cost)
-    vis.plot_costs(list_cost, True)
-    #plt.plot(state)
+    print("cost_rl: ", agg_cost)
+    vis.plot_costs(costs)
