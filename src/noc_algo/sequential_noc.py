@@ -136,7 +136,8 @@ if __name__ == '__main__':
             env.render()
             s, c, d, _ = env.step(u_opt[i])
             #state.append(s)
-            cost += c
+            # cost += c*gamma
+            cost = c + gamma*cost
             list_cost.append(c)
             time.sleep(dt)
     print("cost_rl: ", cost)

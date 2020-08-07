@@ -90,7 +90,8 @@ class PendulumEnv(gym.Env):
             for i in range(self.N_rk4):
                 self.state = self.rk4step(self.state, u, h)
 
-        return self._get_obs(), -costs, False, {}
+        # return self._get_obs(), -costs, False, {}
+        return self._get_obs(), costs, False, {}
 
     def reset(self):
         # high = np.array([np.pi, 1])
@@ -118,8 +119,8 @@ class PendulumEnv(gym.Env):
             axle = rendering.make_circle(.05)
             axle.set_color(0, 0, 0)
             self.viewer.add_geom(axle)
-            #fname = path.join(path.dirname(__file__), "assets/clockwise.png")
-            fname='/home/srbh/noc_proj/NumOptCtl-project/src/noc_algo/clockwise.png'
+            fname = path.join(path.dirname(__file__), "clockwise.png")
+            # fname='/home/srbh/noc_proj/NumOptCtl-project/src/noc_algo/clockwise.png'
             self.img = rendering.Image(fname, 1., 1.)
             self.imgtrans = rendering.Transform()
             self.img.add_attr(self.imgtrans)

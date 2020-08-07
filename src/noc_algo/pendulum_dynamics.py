@@ -39,7 +39,7 @@ class PendulumDynamics:
         # % output:
         # %  x_next        state after one rk4 step
         k1 = self.dynamics(x, u)
-        k2 = self.dynamics(x + h/2*k1, u)
+        k2 = self.dynamics(x+h/2*k1, u)
         k3 = self.dynamics(x+h/2*k2, u)
         k4 = self.dynamics(x+h*k3, u)
         x_next = x + h/6*(k1 + 2*k2 + 2*k3 + k4)
