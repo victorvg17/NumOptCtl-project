@@ -25,7 +25,7 @@ class Plotter:
             fig.savefig(self.result_path + 'state_trajectory_rl.png')
 
     def plot_dynamics(self, g_1, g_2):
-        fig, (ax1, ax2) = plt.subplots(2,1)
+        fig, (ax1, ax2) = plt.subplots(2,1, sharex= True)
         ax1.plot(g_1, label='g_1')
         ax2.plot(g_2, label='g_2')
         ax2.set_xlabel('timsteps N')
