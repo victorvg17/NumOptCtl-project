@@ -5,7 +5,14 @@ import matplotlib.pyplot as plt
 from pendulum_dynamics import PendulumDynamics
 from pendulum import PendulumEnv
 import time
+import importlib.util
+import os
 
+utils_path = os.path.abspath(__file__).replace(os.path.abspath(__file__).split("/")[-2] + '/' +os.path.abspath(__file__).split("/")[-1],'')
+spec = importlib.util.spec_from_file_location("utils_common", utils_path + "utils_common.py")
+plot_utils = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(plot_utils)
+vis = plot_utils.Plotter(utils_path + 'results/')
 
 def extractSolFromNlpSolver(res):
     w_opt_np = np.array(res["x"])
@@ -26,7 +33,7 @@ def extractSolFromNlpSolver(res):
 
     cost = np.array(res["f"])
     g = np.array(res["g"])
-    print('cost: ', -cost[0][0])
+    print('cost: ', cost[0][0])
     print('g shape:', {g.shape})
     g_1 = []
     g_2 = []
@@ -52,9 +59,13 @@ if __name__ == '__main__':
     N = 50         # horizon length
     N_rk4 = 10      # RK4 steps
     dt = 0.1        #delta time s
+    gamma = 0.99
+    w0 = 0.1
+    L = 0
 
     high = np.array([np.pi, 1])
     x0bar = np.random.uniform(low=-high, high=high)
+    print("initial state:", x0bar)
     #x0bar = [np.pi, 0]    # initial state
 
     x = MX.sym('x',nx,1)
@@ -77,10 +88,8 @@ if __name__ == '__main__':
     w = []
     # constraint on the entire state vector
     ubw = []
-    w0 = 0.1
-    L = 0
     X_k = x0bar
-    gamma = 0.99
+    
 
     for i in range(N):
         U_name = 'U_' + str(i)
@@ -118,14 +127,16 @@ if __name__ == '__main__':
     # visualise solution
     u_opt, th_opt, thdot_opt, g_1 , g_2 = extractSolFromNlpSolver(res)
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.plot(th_opt)
-    ax1.plot(thdot_opt)
-    ax2.plot(u_opt)
+  
 
-    fig2 , (ax3, ax4) = plt.subplots(2,1)
-    ax3.plot(g_1)
-    ax4.plot(g_2)
+    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    # ax1.plot(th_opt)
+    # ax1.plot(thdot_opt)
+    # ax2.plot(u_opt)
+
+    vis.plot_state_trajectory(th_opt, thdot_opt, True)
+    vis.plot_control_trajectory(u_opt, True)
+    vis.plot_dynamics(g_1, g_2, True)
 
     #env = PendulumEnv(N_rk4 = N_rk4, DT = dt)
     #state = []
@@ -142,7 +153,5 @@ if __name__ == '__main__':
             list_cost.append(c)
             time.sleep(dt)
     print("cost_rl: ", cost)
-    fig3, ax5 = plt.subplots()
-    ax5.plot(list_cost)
-    plt.show()
+    vis.plot_costs(list_cost, True)
     #plt.plot(state)
