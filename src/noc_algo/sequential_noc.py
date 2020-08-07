@@ -134,5 +134,5 @@ if __name__ == '__main__':
             agg_cost = c + gamma*agg_cost
             costs.append(c)
             time.sleep(dt)
-    print("cost_rl: ", agg_cost)
+    # print("cost_rl: ", agg_cost)
     vis.plot_costs(costs)
