@@ -52,7 +52,10 @@ if __name__ == '__main__':
     N = 50         # horizon length
     N_rk4 = 10      # RK4 steps
     dt = 0.1        #delta time s
-    x0bar = [np.pi, 0]    # initial state
+
+    high = np.array([np.pi, 1])
+    x0bar = np.random.uniform(low=-high, high=high)
+    #x0bar = [np.pi, 0]    # initial state
 
     x = MX.sym('x',nx,1)
     u = MX.sym('u',nu,1)
@@ -115,8 +118,6 @@ if __name__ == '__main__':
     # visualise solution
     u_opt, th_opt, thdot_opt, g_1 , g_2 = extractSolFromNlpSolver(res)
 
-    costs_opt = calculateCostFromOptimTrajectory(u_opt, th_opt, thdot_opt)
-
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     ax1.plot(th_opt)
     ax1.plot(thdot_opt)
@@ -131,7 +132,7 @@ if __name__ == '__main__':
     cost = 0
     list_cost = []
     with contextlib.closing(PendulumEnv(N_rk4 = N_rk4, DT = dt)) as env:
-        s = env.reset()
+        s = env.reset(x0bar)
         for i in range(N):
             env.render()
             s, c, d, _ = env.step(u_opt[i])
