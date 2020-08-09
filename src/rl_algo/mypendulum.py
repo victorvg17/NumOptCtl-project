@@ -17,8 +17,8 @@ class PendulumEnv(gym.Env):
     }
 
     def __init__(self, DT = 0.1, N_rk4 = 10):
-        self.max_speed=8
-        self.max_torque=2.
+        self.max_speed = 8
+        self.max_torque = 2.0
         # self.dt=.05
         self.dt=DT
         self.viewer = None
@@ -98,10 +98,11 @@ class PendulumEnv(gym.Env):
             for i in range(self.N_rk4):
                 self.state = self.rk4step(self.state, u, h)
 
-        return self._get_obs(), -costs, False, {}
+        return self._get_obs(), -costs, False, {}, self.state
 
     def reset(self):
         high = np.array([np.pi, 1])
+        # high = np.array([np.pi, 2])
         self.state = self.np_random.uniform(low=-high, high=high)
         self.last_u = None
         return self._get_obs()

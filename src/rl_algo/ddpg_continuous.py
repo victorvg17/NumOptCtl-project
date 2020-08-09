@@ -73,7 +73,7 @@ class Actor(nn.Module):
             action_and_noise = self.block(state)
         else:
             action_and_noise = self.block(state) + torch.randn(1) * self.noise_std
-        return torch.clamp(action_and_noise, min=-2.0, max=2.0)
+        return torch.clamp(action_and_noise, min = -2.0, max = 2.0)
 
 
 class Critic(nn.Module):
@@ -152,10 +152,8 @@ class DDPG:
         """
         used for test time (not training)
         """
-        action = self.actor(state, is_testing).detach()
-        # env_action = torch.clamp(action, min=-1.0, max=1.0).detach().numpy()
-        env_action = torch.clamp(action, min=-2.0, max=2.0).detach().numpy()
-        return env_action
+        action = self.actor(state, is_testing).detach().numpy()
+        return action
 
     def train(self, env, episodes, timesteps):
         stats = EpisodeStats(episode_lengths=np.zeros(episodes),
@@ -165,9 +163,10 @@ class DDPG:
             for t in range(timesteps):
                 # --- choose action
                 action = self.actor(state).detach()
-                env_action = torch.clamp(action, min=-1.0,
-                                         max=1.0).detach().numpy()
-                next_state, reward, done, _ = env.step(env_action)
+                env_action = torch.clamp(action, min = -2.0,
+                                         max = 2.0).detach().numpy()
+                
+                next_state, reward, done, _, _ = env.step(env_action)
 
                 # --- saving stats
                 stats.episode_rewards[i_episode - 1] += reward

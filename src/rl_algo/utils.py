@@ -8,6 +8,8 @@ from scipy.stats import laplace
 import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
+import os
+import importlib.util
 
 Transition = namedtuple('Transition',
                         ['state', 'action', 'next_state', 'reward', 'done'])
@@ -378,6 +380,24 @@ def save_config_colab(hyper_params: dict, experiment: int, algo_name: str):
     f.write(str(hyper_params))
     f.close()
 
+def plot_results(exp_data: dict):
+    """
+    plotting functions which wraps around utils_common Plotter
+    """
+    utils_path = os.path.abspath(__file__).replace(os.path.abspath(__file__).split("/")[-2] + '/' +os.path.abspath(__file__).split("/")[-1],'')
+    spec = importlib.util.spec_from_file_location("utils_common", utils_path + "utils_common.py")
+    plot_utils = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(plot_utils)
+    vis = plot_utils.Plotter(utils_path + 'results/', is_noc = False)
+
+    th = np.array(exp_data['th'])
+    thdot = np.array(exp_data['thdot'])
+    actions = np.array(exp_data['actions'])
+    rewards = np.array(exp_data['rewards'])
+
+    vis.plot_state_trajectory(th, thdot)
+    vis.plot_control_trajectory(actions)
+    vis.plot_costs(rewards)
 
 # ========== maps ==========
 
