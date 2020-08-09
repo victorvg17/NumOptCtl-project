@@ -2,6 +2,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
 class Plotter:
     def __init__(self, result_path, is_noc, show_plots = True):
@@ -39,17 +40,23 @@ class Plotter:
             fig.savefig(self.result_path + 'dynamics_rl.png')
 
     def plot_control_trajectory(self, u):
-            fig, ax = plt.subplots()
-            ax.plot(u, label='Control')
-            ax.set_xlabel('timsteps N')
-            ax.set_title('Control trajectory')
-            ax.legend(loc='upper right')
+        print(f"u shape: {u.shape}")
+        if (self.is_noc == False):
+            smoothing_window = max(1, len(u) // 50)
+            u = np.squeeze(u, axis=-1)
+            u = pd.Series.rolling(pd.Series(u), 
+                                  smoothing_window).mean()
+        fig, ax = plt.subplots()
+        ax.plot(u, label='Control')
+        ax.set_xlabel('timsteps N')
+        ax.set_title('Control trajectory')
+        ax.legend(loc='upper right')
 
-            my_path = os.path.abspath(__file__)
-            if (self.is_noc):
-                fig.savefig(self.result_path + 'Control_trajectory_noc.png')
-            else:
-                fig.savefig(self.result_path + 'Control_trajectory_rl.png')
+        my_path = os.path.abspath(__file__)
+        if (self.is_noc):
+            fig.savefig(self.result_path + 'Control_trajectory_noc.png')
+        else:
+            fig.savefig(self.result_path + 'Control_trajectory_rl.png')
 
     def plot_costs(self, costs):
         fig, ax = plt.subplots()
