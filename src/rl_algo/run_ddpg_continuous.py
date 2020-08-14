@@ -8,6 +8,7 @@ from ddpg_continuous import DDPG
 from utils import Visualizer
 from utils import reward_carrot_stick, reward_no_fast_rotation, reward_laplacian
 from utils import reward_func_map
+import time
 
 if __name__ == '__main__':
 
@@ -61,10 +62,11 @@ if __name__ == '__main__':
     if render_flag:
         with contextlib.closing(PendulumEnv()) as env:
             for _ in range(4):
-                s = env.reset()
+                s = env.reset(fixed = True)  #change to false for random init
                 for _ in range(500):
                     env.render()
                     a = ddpg.get_action(s, is_testing=True)
                     s, _, d, _ = env.step(a)
+                    time.sleep(env.dt)
                     if d:
                         break

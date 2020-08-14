@@ -2,7 +2,6 @@ import numpy as np
 from casadi import *
 import math
 import matplotlib.pyplot as plt
-from pendulum_dynamics import PendulumDynamics
 from pendulum import PendulumEnv
 import time
 import importlib.util
@@ -33,8 +32,9 @@ def extractSolFromNlpSolver(res):
     print('thdot_opt shape:', {thdot_opt.shape})
 
     cost = np.array(res["f"])
+    loss = cost[0][0]
     g = np.array(res["g"])
-    print('cost: ', cost[0][0])
+    print('cost: ', loss)
     print('g shape:', {g.shape})
     g_1 = []
     g_2 = []
@@ -42,30 +42,19 @@ def extractSolFromNlpSolver(res):
         g_1.append(g[i])
         g_2.append(g[i+1])
 
-    return u_opt, th_opt, thdot_opt, g_1, g_2
+    return u_opt, th_opt, thdot_opt, g_1, g_2, loss
 
-if __name__ == '__main__':
+
+def simultaneous_opt(x0bar,L, pend_dyn, N , gamma):
     #parameters
-    nx = 2          # state dimension
-    nu = 1          # control dimension
-    N = 50         # horizon length
-    N_rk4 = 10      # RK4 steps
-    dt = 0.1        #delta time s
-    gamma = 0.99
-    w0 = 0.1
-    L = 0
-
-    high = np.array([np.pi, 1])
-    x0bar = np.random.uniform(low=-high, high=high)
-    print("initial state:", x0bar)
-    #x0bar = [np.pi, 0]    # initial state
+    nx = pend_dyn.nx       # state dimension
+    nu = pend_dyn.nu        # control dimension
+    w0 = pend_dyn.w0
+    max_speed = pend_dyn.max_speed
+    max_torque = pend_dyn.max_torque
 
     x = MX.sym('x',nx,1)
     u = MX.sym('u',nu,1)
-
-    pend_dyn = PendulumDynamics(N_rk4 = N_rk4, DT = dt)
-    max_speed = pend_dyn.max_speed
-    max_torque = pend_dyn.max_torque
     x_next = pend_dyn.simulate_next_state(x, u)
     print('type x_next:', type(x_next))
     # integrator
@@ -76,24 +65,18 @@ if __name__ == '__main__':
     # NLP formulation
     # collect all decision variables in w
     g = []
-    # full state vector w: [u0, theta1, omega1, ....u49, theta50, omega50]
-    w = []
-    # constraint on the entire state vector
-    ubw = []
+    w = [] # full state vector w: [u0, theta1, omega1, ....u49, theta50, omega50]
+    ubw = []  # constraint on the entire state vector
     X_k = x0bar
-    
 
     for i in range(N):
         U_name = 'U_' + str(i)
         U_k = MX.sym(U_name, nu, 1)
         # L +=  X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2
         L = X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2 + gamma*L
-
         X_next = F(X_k, U_k)
-
         X_name = 'X_' + str(i+1)
         X_k = MX.sym(X_name, nx, 1)
-
         ubw = vertcat(ubw, max_torque, inf, max_speed)
         w = vertcat(w, U_k, X_k)
         g = vertcat(g, X_next - X_k)
@@ -105,7 +88,9 @@ if __name__ == '__main__':
     nlp = {"x": w,
            "f": L,
            "g": g}
-    solver = nlpsol('solver','ipopt', nlp)
+    opts_dict = {}
+    opts_dict["ipopt.print_level"] = 0
+    solver = nlpsol('solver','ipopt', nlp, opts_dict)
 
     arg = {}
     arg["x0"] = w0
@@ -116,23 +101,40 @@ if __name__ == '__main__':
 
     # Solve the problem
     res = solver(**arg)
+    return extractSolFromNlpSolver(res)
 
-    # visualise solution
-    u_opt, th_opt, thdot_opt, g_1 , g_2 = extractSolFromNlpSolver(res)
+if __name__ == '__main__':
+    
+    N_rk4 = 10      # RK4 steps
+    dt = 0.1        #delta time s
+    N = 50         # horizon length
+    gamma = 0.99
 
-    vis.plot_state_trajectory(th_opt, thdot_opt)
-    vis.plot_control_trajectory(u_opt)
-    vis.plot_dynamics(g_1, g_2)
-
-    agg_cost = 0
     costs = []
+    u_opt_f = []
+    th_opt_f = [] 
+    thdot_opt_f = [] 
+    g_1_f = []
+    g_2_f = []
+
     with contextlib.closing(PendulumEnv(N_rk4 = N_rk4, DT = dt)) as env:
-        s = env.reset(x0bar)
+        s = env.reset(fixed = True) #fixed start at pi,0
+        x0bar = np.array(s)
+        c = 0
         for i in range(N):
             env.render()
-            s, c, d, _ = env.step(u_opt[i])
-            agg_cost = c + gamma*agg_cost
-            costs.append(c)
-            time.sleep(dt)
-    # print("cost_rl: ", agg_cost)
+            u_opt, th_opt, thdot_opt, g_1 , g_2, l = simultaneous_opt(s ,c ,env, N-i, gamma)
+            s, c, d, _ = env.step(u_opt[0], noise = False) #state noise
+            u_opt_f.append(u_opt[0])
+            th_opt_f.append(th_opt[0])
+            thdot_opt_f.append(thdot_opt[0])
+            costs.append(c)  #gamma is implicit
+            g_1_f.append(g_1[0])
+            g_2_f.append(g_2[0])
+
+        # visualise solution
+    print("initial state:", x0bar)
     vis.plot_costs(costs)
+    vis.plot_state_trajectory(th_opt_f, thdot_opt_f)
+    vis.plot_control_trajectory(u_opt_f)
+    vis.plot_dynamics(g_1_f, g_2_f)
