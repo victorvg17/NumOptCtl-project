@@ -50,7 +50,7 @@ class PendulumEnv(gym.Env):
         # return vertcat(omega, self.t1 * np.sin(theta + np.pi) + self.t2*u)
         return dyn_eqn
 
-    def rk4step(self, x, u, h):
+    def rk4step(self, x, u, h, noise):
         # % one rk4 step
         # % inputs:
         # %  x             initial state of integration
@@ -65,11 +65,12 @@ class PendulumEnv(gym.Env):
         x_next = x + h/6*(k1 + 2*k2 + 2*k3 + k4)
         a_max = np.array([np.pi, self.max_speed])
 
-        x_next[1] += np.random.normal(loc=0.0, scale=0.01, size=None)
+        if noise:
+            x_next[1] += np.random.normal(loc=0.0, scale=0.01, size=None)
         x_next = np.clip(x_next, a_min = -a_max, a_max = a_max)
         return x_next
 
-    def step(self,u):
+    def step(self,u, noise):
         th, thdot = self.state # th := theta
 
         # g = 10.
@@ -96,7 +97,7 @@ class PendulumEnv(gym.Env):
         else: #rk4 integrator
             h = dt/self.N_rk4
             for i in range(self.N_rk4):
-                self.state = self.rk4step(self.state, u, h)
+                self.state = self.rk4step(self.state, u, h, noise)
 
         return self._get_obs(), -costs, False, {}
 

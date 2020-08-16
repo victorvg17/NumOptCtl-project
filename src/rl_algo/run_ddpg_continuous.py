@@ -66,7 +66,7 @@ if __name__ == '__main__':
                 for _ in range(500):
                     env.render()
                     a = ddpg.get_action(s, is_testing=True)
-                    s, _, d, _ = env.step(a)
+                    s, _, d, _ = env.step(a, noise = True)
                     time.sleep(env.dt)
                     if d:
                         break

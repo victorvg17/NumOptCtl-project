@@ -14,7 +14,7 @@ plot_utils = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(plot_utils)
 vis = plot_utils.Plotter(utils_path + 'results/', True)
 
-def extractSolFromNlpSolver(res):
+def extractSolFromNlpSolver(res, iter_count):
     w_opt_np = np.array(res["x"])
 
     u_opt = []
@@ -42,7 +42,7 @@ def extractSolFromNlpSolver(res):
         g_1.append(g[i])
         g_2.append(g[i+1])
 
-    return u_opt, th_opt, thdot_opt, g_1, g_2, loss
+    return u_opt, th_opt, thdot_opt, g_1, g_2, loss, iter_count
 
 
 def simultaneous_opt(x0bar,L, pend_dyn, N , gamma):
@@ -56,7 +56,7 @@ def simultaneous_opt(x0bar,L, pend_dyn, N , gamma):
     x = MX.sym('x',nx,1)
     u = MX.sym('u',nu,1)
     x_next = pend_dyn.simulate_next_state(x, u)
-    print('type x_next:', type(x_next))
+    # print('type x_next:', type(x_next))
     # integrator
     F = Function('F', [x, u], [x_next], \
                 ['x', 'u'], ['x_next'])
@@ -88,8 +88,11 @@ def simultaneous_opt(x0bar,L, pend_dyn, N , gamma):
     nlp = {"x": w,
            "f": L,
            "g": g}
+           
     opts_dict = {}
     opts_dict["ipopt.print_level"] = 0
+    opts_dict["print_time"] = 0
+
     solver = nlpsol('solver','ipopt', nlp, opts_dict)
 
     arg = {}
@@ -101,13 +104,14 @@ def simultaneous_opt(x0bar,L, pend_dyn, N , gamma):
 
     # Solve the problem
     res = solver(**arg)
-    return extractSolFromNlpSolver(res)
+    it = solver.stats()['iter_count']
+    return extractSolFromNlpSolver(res, it)
 
 if __name__ == '__main__':
     
     N_rk4 = 10      # RK4 steps
     dt = 0.1        #delta time s
-    N = 50         # horizon length
+    N = 500         # horizon length
     gamma = 0.99
 
     costs = []
@@ -116,6 +120,8 @@ if __name__ == '__main__':
     thdot_opt_f = [] 
     g_1_f = []
     g_2_f = []
+    iter_f = []
+    iter_total = 0
 
     with contextlib.closing(PendulumEnv(N_rk4 = N_rk4, DT = dt)) as env:
         s = env.reset(fixed = True) #fixed start at pi,0
@@ -123,17 +129,21 @@ if __name__ == '__main__':
         c = 0
         for i in range(N):
             env.render()
-            u_opt, th_opt, thdot_opt, g_1 , g_2, l = simultaneous_opt(s ,c ,env, N-i, gamma)
-            s, c, d, _ = env.step(u_opt[0], noise = False) #state noise
+            u_opt, th_opt, thdot_opt, g_1 , g_2, l, iter_count = simultaneous_opt(s ,c ,env, N-i, gamma)
+            s, c, d, _ = env.step(u_opt[0], noise = True) #state noise
             u_opt_f.append(u_opt[0])
             th_opt_f.append(th_opt[0])
             thdot_opt_f.append(thdot_opt[0])
             costs.append(c)  #gamma is implicit
             g_1_f.append(g_1[0])
             g_2_f.append(g_2[0])
+            iter_f.append(iter_count)
+            
 
         # visualise solution
     print("initial state:", x0bar)
+    print("total iterations:", sum(iter_f))
+    vis.plot_stats(iter_f, sum(iter_f))
     vis.plot_costs(costs)
     vis.plot_state_trajectory(th_opt_f, thdot_opt_f)
     vis.plot_control_trajectory(u_opt_f)
