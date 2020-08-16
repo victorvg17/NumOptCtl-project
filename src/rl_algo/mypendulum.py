@@ -99,7 +99,7 @@ class PendulumEnv(gym.Env):
             for i in range(self.N_rk4):
                 self.state = self.rk4step(self.state, u, h, noise)
 
-        return self._get_obs(), -costs, False, {}
+        return self._get_obs(), -costs, False, {} , self.state
 
     def reset(self, fixed):
 

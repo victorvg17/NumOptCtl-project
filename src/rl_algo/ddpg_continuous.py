@@ -154,8 +154,8 @@ class DDPG:
         """
         action = self.actor(state, is_testing).detach()
         # env_action = torch.clamp(action, min=-1.0, max=1.0).detach().numpy()
-        env_action = torch.clamp(action, min=-2.0, max=2.0).detach().numpy()
-        return env_action
+        action = self.actor(state, is_testing).detach().numpy()
+        return action
 
     def train(self, env, episodes, timesteps):
         stats = EpisodeStats(episode_lengths=np.zeros(episodes),

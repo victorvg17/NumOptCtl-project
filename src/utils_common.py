@@ -2,6 +2,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
 class Plotter:
     def __init__(self, result_path, is_noc, show_plots = True):
@@ -39,6 +40,13 @@ class Plotter:
             fig.savefig(self.result_path + 'dynamics_rl.png')
 
     def plot_control_trajectory(self, u):
+
+            if (self.is_noc == False):
+                smoothing_window = max(1, len(u) // len(u)/10)
+                u = np.squeeze(u, axis=-1)
+                u = pd.Series.rolling(pd.Series(u), 
+                                    smoothing_window).mean()
+
             fig, ax = plt.subplots()
             ax.plot(u, label='Control')
             ax.set_xlabel('timesteps N')
