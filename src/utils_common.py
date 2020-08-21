@@ -60,9 +60,9 @@ class Plotter:
 
     def plot_costs(self, costs):
         fig, ax = plt.subplots()
-        ax.plot(costs, label='Cost')
+        ax.plot(costs, label='reward')
         ax.set_xlabel('timsteps N')
-        ax.set_title('Cost trajectory')
+        ax.set_title('reward trajectory over single episode')
         ax.legend(loc='upper right')
 
         #save the plot
