@@ -398,7 +398,6 @@ def plot_results(exp_data: dict):
     vis.plot_state_trajectory(th, thdot)
     vis.plot_control_trajectory(actions)
     vis.plot_costs(rewards)
-
 # ========== maps ==========
 
 reward_func_map = {

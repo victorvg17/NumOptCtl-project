@@ -3,6 +3,7 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 from os import path
+from casadi import *
 
 
 class PendulumEnv(gym.Env):
@@ -18,6 +19,9 @@ class PendulumEnv(gym.Env):
         self.g = g
         self.m = 1.
         self.l = 1.
+        self.nx = 2
+        self.nu = 1
+        self.w0 = 0.1
         self.viewer = None
 
         self.t1 = -3.0*self.g/(2*self.l)
@@ -50,7 +54,7 @@ class PendulumEnv(gym.Env):
         dyn_eqn = np.array([omega, self.t1 * np.sin(theta) + self.t2*u])
         return dyn_eqn
 
-    def rk4step(self, x, u, h):
+    def rk4step(self, x, u, h, noise):
         # % one rk4 step
         # % inputs:
         # %  x             initial state of integration
@@ -65,17 +69,20 @@ class PendulumEnv(gym.Env):
         x_next = x + h/6*(k1 + 2*k2 + 2*k3 + k4)
 
         # a_max = np.array([np.pi, self.max_speed])
-        # x_next[1] += np.random.normal(loc=0.0, scale=0.01, size=None)
+        
         # x_next = np.clip(x_next, a_min = -a_max, a_max = a_max)
 
+        if noise:
+            x_next[1] += np.random.normal(loc=0.0, scale=0.01, size=None)
         return x_next
 
-    def step(self,u):
+    def step(self,u, noise):
         th, thdot = self.state
 
         dt = self.dt
 
-        u = np.clip(u, -self.max_torque, self.max_torque)[0]
+        # u = np.clip(u, -self.max_torque, self.max_torque)[0]
+        u = np.array(u)[0]
         self.last_u = u # for rendering
         #costs = angle_normalize(th)**2 + 0.1*thdot**2 + 0.001*(u**2)
         costs = th**2 + 0.1*thdot**2 + 0.001*(u**2)
@@ -88,18 +95,29 @@ class PendulumEnv(gym.Env):
         else: #rk4 integrator
             h = dt/self.N_rk4
             for i in range(self.N_rk4):
-                self.state = self.rk4step(self.state, u, h)
+                self.state = self.rk4step(self.state, u, h, noise)
 
         # return self._get_obs(), -costs, False, {}
         return self._get_obs(), costs, False, {}
 
-    def reset(self, to_state):
+    def reset(self, fixed):
         # high = np.array([np.pi, 1])
         # self.state = self.np_random.uniform(low=-high, high=high)
         # self.last_u = None
-        self.state = np.array(to_state)
-        self.last_u = None
-        return self._get_obs()
+
+
+        # self.state = np.array(to_state)
+        # self.last_u = None
+        # return self._get_obs()
+        if fixed:
+            self.state = np.array([np.pi, 0])
+            self.last_u = None
+            return self._get_obs()
+        else:
+            high = np.array([np.pi, 1])
+            self.state = self.np_random.uniform(low=-high, high=high)
+            self.last_u = None
+            return self._get_obs()
 
     def _get_obs(self):
         theta, thetadot = self.state
@@ -137,6 +155,40 @@ class PendulumEnv(gym.Env):
             self.viewer.close()
             self.viewer = None
 
+    def dynamics_simulate(self, x, u):
+        theta = x[0]
+        omega = x[1]
+        return vertcat(omega, self.t1 * sin(theta) + self.t2*u)
+
+    def rk4step_simulate(self, x, u, h):
+        # % one rk4 step
+        # % inputs:
+        # %  x             initial state of integration
+        # %  u             control, kept constant over integration
+        # %  h             time step of integration
+        # % output:
+        # %  x_next        state after one rk4 step
+        k1 = self.dynamics_simulate(x, u)
+        k2 = self.dynamics_simulate(x+h/2*k1, u)
+        k3 = self.dynamics_simulate(x+h/2*k2, u)
+        k4 = self.dynamics_simulate(x+h*k3, u)
+        x_next = x + h/6*(k1 + 2*k2 + 2*k3 + k4)
+        return x_next
+
+    def simulate_next_state(self, x, u):
+        # newthdot = thdot + (self.t1 * np.sin(th + np.pi) + self.t2*u) * self.dt
+        if (self.kinematics_integrator == 'implicit-euler'):
+            theta = x[0]
+            omega = x[1]
+            new_omega = omega + (self.t1 * sin(theta) + self.t2*u) * self.dt
+            new_theta = theta + new_omega*self.dt
+            return vertcat(new_theta, new_omega)
+
+        else: #rk4 integrator
+            h = self.dt/self.N_rk4
+            for i in range(self.N_rk4):
+                x = self.rk4step_simulate(x, u, h)
+        return x
 
 def angle_normalize(x):
     return (((x+np.pi) % (2*np.pi)) - np.pi)

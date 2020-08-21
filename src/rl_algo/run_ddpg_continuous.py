@@ -8,6 +8,10 @@ from ddpg_continuous import DDPG
 from utils import Visualizer
 from utils import reward_carrot_stick, reward_no_fast_rotation, reward_laplacian
 from utils import reward_func_map
+<<<<<<< HEAD
+=======
+import time
+>>>>>>> dev
 from utils import plot_results
 
 if __name__ == '__main__':
@@ -67,22 +71,20 @@ if __name__ == '__main__':
                     'rewards': []
                     }
         with contextlib.closing(PendulumEnv()) as env:
-            for _ in range(1):
-                s = env.reset()
+            for _ in range(4):
+                s = env.reset(fixed = True)  #change to false for random init
                 for _ in range(500):
                     env.render()
                     a = ddpg.get_action(s, is_testing=True)
-                    s, r, d, _, ns_abs = env.step(a)
+                    # s, _, d, _ = env.step(a, noise = True)
+                    s, r, d, _, ns_abs = env.step(a, noise = True)
                     tot_reward = r + gamma*tot_reward
-
                     exp_data['th'].append(ns_abs[0])
                     exp_data['thdot'].append(ns_abs[1])
                     exp_data['actions'].append(a)
                     exp_data['rewards'].append(r)
-
+                    time.sleep(env.dt)
                     if d:
                         break
-
                 plot_results(exp_data)
-        
         print("tot_reward rl: ", tot_reward)

@@ -15,7 +15,7 @@ class Plotter:
         fig, ax = plt.subplots()
         ax.plot(th, label='angular displacement')
         ax.plot(thdot, label='angular velocity')
-        ax.set_xlabel('timsteps N')
+        ax.set_xlabel('timesteps N')
         ax.set_title('state trajectory')
         ax.legend(loc='upper right')
 
@@ -29,7 +29,7 @@ class Plotter:
         fig, (ax1, ax2) = plt.subplots(2,1, sharex= True)
         ax1.plot(g_1, label='g_1')
         ax2.plot(g_2, label='g_2')
-        ax2.set_xlabel('timsteps N')
+        ax2.set_xlabel('timesteps N')
         fig.suptitle('dynamics')
         ax1.legend(loc='upper right')
         ax2.legend(loc='upper right')
@@ -40,17 +40,18 @@ class Plotter:
             fig.savefig(self.result_path + 'dynamics_rl.png')
 
     def plot_control_trajectory(self, u):
-        print(f"u shape: {u.shape}")
-        if (self.is_noc == False):
-            smoothing_window = max(1, len(u) // 50)
-            u = np.squeeze(u, axis=-1)
-            u = pd.Series.rolling(pd.Series(u), 
-                                  smoothing_window).mean()
-        fig, ax = plt.subplots()
-        ax.plot(u, label='Control')
-        ax.set_xlabel('timsteps N')
-        ax.set_title('Control trajectory')
-        ax.legend(loc='upper right')
+
+            if (self.is_noc == False):
+                smoothing_window = max(1, len(u) // len(u)/10)
+                u = np.squeeze(u, axis=-1)
+                u = pd.Series.rolling(pd.Series(u), 
+                                    smoothing_window).mean()
+
+            fig, ax = plt.subplots()
+            ax.plot(u, label='Control')
+            ax.set_xlabel('timesteps N')
+            ax.set_title('Control trajectory')
+            ax.legend(loc='upper right')
 
         my_path = os.path.abspath(__file__)
         if (self.is_noc):
@@ -71,3 +72,17 @@ class Plotter:
             fig.savefig(self.result_path + 'Cost_noc.png')
         else:
             fig.savefig(self.result_path + 'Cost_rl.png')
+
+    def plot_stats(self, stats, total):
+        fig, ax = plt.subplots()
+        ax.plot(stats, label='iterations')
+        ax.set_xlabel('timesteps N')
+        ax.set_title('No. of iterations to find solution (Total = %d)'%(total) )
+        ax.legend(loc='upper right')
+
+        #save the plot
+        my_path = os.path.abspath(__file__)
+        if (self.is_noc):
+            fig.savefig(self.result_path + 'iter_noc.png')
+        else:
+            fig.savefig(self.result_path + 'iter_rl.png')

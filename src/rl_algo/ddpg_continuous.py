@@ -152,6 +152,8 @@ class DDPG:
         """
         used for test time (not training)
         """
+        action = self.actor(state, is_testing).detach()
+        # env_action = torch.clamp(action, min=-1.0, max=1.0).detach().numpy()
         action = self.actor(state, is_testing).detach().numpy()
         return action
 
