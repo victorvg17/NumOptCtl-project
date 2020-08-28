@@ -8,10 +8,7 @@ from ddpg_continuous import DDPG
 from utils import Visualizer
 from utils import reward_carrot_stick, reward_no_fast_rotation, reward_laplacian
 from utils import reward_func_map
-<<<<<<< HEAD
-=======
 import time
->>>>>>> dev
 from utils import plot_results
 
 if __name__ == '__main__':
