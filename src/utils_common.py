@@ -73,6 +73,20 @@ class Plotter:
         else:
             fig.savefig(self.result_path + 'Cost_rl.png')
 
+    def plot_acc_costs(self, costs):
+            fig, ax = plt.subplots()
+            ax.plot(costs, label='Cost')
+            ax.set_xlabel('timesteps N')
+            ax.set_title('Cost trajectory')
+            ax.legend(loc='upper right')
+
+            #save the plot
+            my_path = os.path.abspath(__file__)
+            if (self.is_noc):
+                fig.savefig(self.result_path + 'acc_Cost_noc.png')
+            else:
+                fig.savefig(self.result_path + 'acc_Cost_rl.png')
+
     def plot_stats(self, stats, total):
         fig, ax = plt.subplots()
         ax.plot(stats, label='iterations')

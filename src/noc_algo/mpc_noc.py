@@ -72,8 +72,8 @@ def simultaneous_opt(x0bar,L, pend_dyn, N , gamma):
     for i in range(N):
         U_name = 'U_' + str(i)
         U_k = MX.sym(U_name, nu, 1)
-        # L +=  X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2
-        L = X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2 + gamma*L
+        L +=  X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2
+        # L = X_k[0]**2 + 0.1*(X_k[1])**2 + 0.001*U_k**2 + gamma*L
         X_next = F(X_k, U_k)
         X_name = 'X_' + str(i+1)
         X_k = MX.sym(X_name, nx, 1)
@@ -115,6 +115,7 @@ if __name__ == '__main__':
     gamma = 0.99
 
     costs = []
+    acc_costs = []
     u_opt_f = []
     th_opt_f = [] 
     thdot_opt_f = [] 
@@ -126,11 +127,12 @@ if __name__ == '__main__':
     with contextlib.closing(PendulumEnv(N_rk4 = N_rk4, DT = dt)) as env:
         s = env.reset(fixed = True) #fixed start at pi,0
         x0bar = np.array(s)
-        c = 0
+        q = 0
         for i in range(N):
             env.render()
-            u_opt, th_opt, thdot_opt, g_1 , g_2, l, iter_count = simultaneous_opt(s ,c ,env, N-i, gamma)
+            u_opt, th_opt, thdot_opt, g_1 , g_2, l, iter_count = simultaneous_opt(s ,q ,env, N-i, gamma)
             s, c, d, _ = env.step(u_opt[0], noise = True) #state noise
+            q = c + gamma*q
             u_opt_f.append(u_opt[0])
             th_opt_f.append(th_opt[0])
             thdot_opt_f.append(thdot_opt[0])
@@ -138,6 +140,7 @@ if __name__ == '__main__':
             g_1_f.append(g_1[0])
             g_2_f.append(g_2[0])
             iter_f.append(iter_count)
+            acc_costs.append(l)
             
 
         # visualise solution
@@ -145,6 +148,7 @@ if __name__ == '__main__':
     print("total iterations:", sum(iter_f))
     vis.plot_stats(iter_f, sum(iter_f))
     vis.plot_costs(costs)
+    # vis.plot_acc_costs(acc_costs)
     vis.plot_state_trajectory(th_opt_f, thdot_opt_f)
     vis.plot_control_trajectory(u_opt_f)
     vis.plot_dynamics(g_1_f, g_2_f)
